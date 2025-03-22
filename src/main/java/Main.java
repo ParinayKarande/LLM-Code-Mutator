@@ -15,7 +15,7 @@ public class Main {
                 FileProcessor.processFiles(files);
             }
             else {
-                Logger.log("No file(s) found in the specified directory...");
+                Logger.error("No file(s) found in the specified directory...");
             }
 
             Logger.log("LLM Mutation Completed");
