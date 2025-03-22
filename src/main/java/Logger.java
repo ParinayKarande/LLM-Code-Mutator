@@ -1,3 +1,6 @@
+/**
+ * This class logs messages in the console.
+ */
 public class Logger {
     public static void log(String message) {
         System.out.println("[INFO] : " + message);

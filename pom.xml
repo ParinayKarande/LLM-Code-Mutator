@@ -30,6 +30,11 @@
             <artifactId>javaparser-core</artifactId>
             <version>3.26.2</version> <!-- Or the latest -->
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.18.0</version> <!-- or the latest version -->
+        </dependency>
 
     </dependencies>
 

@@ -1,3 +1,4 @@
+import enums.Mutators;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -33,24 +34,18 @@ public class OpenAIService {
 
     private static String generatePrompt(String javaCode) {
         Logger.log("Generating Prompt...");
+
+        StringBuilder mutators = new StringBuilder();
+        for (Mutators mutator : Mutators.values()) {
+            mutators.append("- ").append(mutator.getReadableName()).append("\n");
+        }
+
         return """
-                I want to perform mutation testing on the following Java code. \
-                Generate mutants and return the entire mutated Java class to save as a new file.
-                Use the following mutation operators (wherever applicable):
-                - Conditionals Boundary
-                - Increments
-                - Invert Negatives
-                - Math
-                - Negate Conditionals
-                - Return Values
-                - Void Method Calls
-                - Empty Returns
-                - False Returns
-                - True Returns
-                - Null Returns
-                - Primitive Returns
-                
-                """ + "\n\n" + javaCode;
+           I want to perform mutation testing on the following Java code. \
+           Generate mutants and return the entire mutated Java class to save as a new file.
+           Use the following mutation operators (wherever applicable):
+           """ + mutators + "\n\n" + javaCode;
+
     }
 
     private static JSONObject sendAPIRequest(String prompt) throws Exception {
