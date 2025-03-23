@@ -14,6 +14,7 @@ public class OpenAIService {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String MODEL_NAME = "gpt-4o-mini";
+    public static double TOTAL_COST = 0.0;
 
 
     public static String askOpenAI(String javaCode) {
@@ -86,8 +87,6 @@ public class OpenAIService {
         else {
             Logger.log("API response received...");
 
-            responseBuilder.append(responseText).append("\n\n");
-
             if (responseJson.has("usage")) {
                 int promptTokens = responseJson.getJSONObject("usage").getInt("prompt_tokens");
                 int completionTokens = responseJson.getJSONObject("usage").getInt("completion_tokens");
@@ -98,16 +97,19 @@ public class OpenAIService {
                 double inputCost = promptTokens * inputCostPerToken;
                 double outputCost = completionTokens * outputCostPerToken;
                 double totalCost = inputCost + outputCost;
+                TOTAL_COST = TOTAL_COST + totalCost;
 
                 responseBuilder.append("---- Token Usage ----\n");
                 responseBuilder.append("Prompt Tokens: ").append(promptTokens).append("\n");
                 responseBuilder.append("Completion Tokens: ").append(completionTokens).append("\n");
                 responseBuilder.append("Total Tokens: ").append(totalTokens).append("\n");
                 responseBuilder.append(String.format("Estimated Cost: $%.6f", totalCost)).append("\n");
+                Logger.log(responseBuilder.toString());
+                Logger.log(String.format("Combined Overall Token Cost: $%.6f", TOTAL_COST));
             }
         }
 
-        return responseBuilder.toString();
+        return responseText;
     }
 
 }

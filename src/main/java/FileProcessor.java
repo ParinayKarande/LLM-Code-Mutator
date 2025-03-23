@@ -19,37 +19,41 @@ public class FileProcessor {
      */
     public static void processFiles(List<File> files){
         try {
-            for (File file : files) {
+            File outputDir = new File(Paths.get(files.getFirst().getAbsolutePath()).getParent().getParent().toString(), "output");
+            if (outputDir.exists()) {
+                FileUtils.deleteDirectory(outputDir);  // Deletes existing output directory and all its contents
+                Logger.log("Output directory cleared...");
+            }
+            if (outputDir.mkdirs()) {
+                Logger.log("Output directory created at " + outputDir.getPath());
 
-                String javaCode = readJavaCodeWithoutComments(file);
+                for (File file : files) {
 
-                if (javaCode.isEmpty()) {
-                    Logger.error("No valid Java code found in the file.");
-                    return;
-                } else {
-                    Logger.log("Java code extracted from file...");
-                }
+                    String javaCode = readJavaCodeWithoutComments(file);
 
-                // Generate and print mutated code
-                String mutatedCode = OpenAIService.askOpenAI(javaCode);
-                System.out.println("GPT Response:\n" + mutatedCode);
-
-                // Extract Java and Save to File.
-                String extractedJavaCode = extractJavaCodeFromResponse(mutatedCode);
-                if (!extractedJavaCode.isEmpty()) {
-
-                    File outputDir = new File(Paths.get(file.getAbsolutePath()).getParent().getParent().toString(), "output");
-                    if (outputDir.exists()) {
-                        FileUtils.deleteDirectory(outputDir);  // Deletes the directory and all its contents
-                        Logger.log("Output directory cleared...");
-                    }
-                    if (outputDir.mkdirs()) {
-                        Logger.log("Output directory created at " + outputDir.getPath());
+                    if (javaCode.isEmpty()) {
+                        Logger.error("No valid Java code found in " + file.getName());
+                        return;
+                    } else {
+                        Logger.log("Java code extracted from " + file.getName());
                     }
 
-                    saveToFile(extractedJavaCode, outputDir.getPath() + "/" + file.getName());
-                } else {
-                    Logger.error("Java code block not found in response. LLM Mutation for " + file.getName() + " failed...");
+                    // Generate and print mutated code
+                    String mutatedCode = OpenAIService.askOpenAI(javaCode);
+                    //System.out.println("GPT Response:\n" + mutatedCode); // Commented to avoid printing entire response.
+
+                    if (!mutatedCode.isEmpty()) {
+
+                        // Extract Java and Save to File.
+                        String extractedJavaCode = extractJavaCodeFromResponse(mutatedCode);
+                        if (!extractedJavaCode.isEmpty()) {
+                            saveToFile(extractedJavaCode, outputDir.getPath() + "/" + file.getName());
+                        } else {
+                            Logger.error("Java code block not found in response. LLM Mutation for " + file.getName() + " failed...");
+                        }
+                    } else {
+                        Logger.error("No Mutation response returned for " + file.getName());
+                    }
                 }
             }
         } catch (IOException e) {

@@ -1,4 +1,5 @@
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,11 +29,22 @@ public class InitProcessor {
                 File file = new File(filePath);
                 files.add(file);
             }
-
-//            if (dirPath != null) {
-//                // Return multiple files
-//
-//            }
+            else if (dirPath != null){
+                File dir = new File(dirPath);
+                if (dir.exists() && dir.isDirectory()) {
+                    File[] dirFiles = dir.listFiles((dir1, name) -> name.endsWith(".java"));
+                    if (dirFiles != null) {
+                        Collections.addAll(files, dirFiles);
+                    } else {
+                        Logger.error("No Java files found in the directory.");
+                    }
+                } else {
+                    Logger.error("Invalid directory path.");
+                }
+            }
+            else {
+                Logger.error("Please specify a file or directory.");
+            }
 
         } catch (Exception e) {
             Logger.error(e.getMessage());

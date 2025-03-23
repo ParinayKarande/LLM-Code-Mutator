@@ -20,7 +20,6 @@ public class Main {
 
             Logger.log("LLM Mutation Completed");
 
-
         } catch (Exception e) {
             Logger.error(e.getMessage());;
         }

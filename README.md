@@ -41,10 +41,6 @@ To mutate all Java files within a directory, run the following command:
   mvn exec:java -Dexec.args="-dir /path/to/java/file/directory"
 ```
 
-**Note:** Currently, this feature is not available. If you try to run the command, you may encounter the following error: 
-
-[ERROR] : No file(s) found in the specified directory...
-
 
 ---
 
