@@ -1,10 +1,12 @@
-import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.*;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.comments.Comment;
 import org.apache.commons.io.FileUtils;
+import constants.Headers;
 
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -28,7 +30,7 @@ public class FileProcessor {
                 Logger.log("Output directory created at " + outputDir.getPath());
 
                 for (File file : files) {
-
+                    String javaHeader = checkForHeader(file);
                     String javaCode = readJavaCodeWithoutComments(file);
 
                     if (javaCode.isEmpty()) {
@@ -47,7 +49,8 @@ public class FileProcessor {
                         // Extract Java and Save to File.
                         String extractedJavaCode = extractJavaCodeFromResponse(mutatedCode);
                         if (!extractedJavaCode.isEmpty()) {
-                            saveToFile(extractedJavaCode, outputDir.getPath() + "/" + file.getName());
+
+                            saveToFile(javaHeader + extractedJavaCode, outputDir.getPath() + "/" + file.getName());
                         } else {
                             Logger.error("Java code block not found in response. LLM Mutation for " + file.getName() + " failed...");
                         }
@@ -61,6 +64,11 @@ public class FileProcessor {
         }
     }
 
+    /**
+     * Reads Java file and removes all kinds of comments
+     * @param file : file to be mutated
+     * @return Java code without comments
+     */
     public static String readJavaCodeWithoutComments(File file) {
         Logger.log("Extracting Java Code from file...");
         CompilationUnit cu = new CompilationUnit();
@@ -77,7 +85,6 @@ public class FileProcessor {
 
         return cu.toString();
     }
-
 
     public static String extractJavaCodeFromResponse(String response) {
         String startTag = "```java";
@@ -103,4 +110,24 @@ public class FileProcessor {
     }
 
 
+    /**
+     * Checks for java licence headers
+     * @param file : file under check
+     * @return header if found in list of constant headers
+     */
+    public static String checkForHeader(File file) {
+        try {
+            String content = Files.readString(file.toPath());
+
+            for (String header : Headers.getAllHeaders()) {
+                if (content.contains(header)) {
+                    return header + "\n";
+                }
+            }
+        } catch (Exception e) {
+            Logger.log("Error reading file: " + e.getMessage());
+        }
+
+        return "";
+    }
 }
