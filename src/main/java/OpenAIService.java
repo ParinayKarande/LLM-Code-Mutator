@@ -6,8 +6,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class OpenAIService {
 
@@ -68,7 +67,24 @@ public class OpenAIService {
 
         request.setEntity(new StringEntity(requestBody.toString()));
 
+        AtomicBoolean running = new AtomicBoolean(true);;
+        Thread spinner = new Thread(() -> {
+            String animation = "|/-\\";
+            int i = 0;
+            while (running.get()) {
+                System.out.print("\r" + animation.charAt(i++ % animation.length()));
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException ignored) {}
+            }
+            System.out.print("\r");
+        });
+        spinner.start();
+
         String responseString = EntityUtils.toString(client.execute(request).getEntity());
+
+        running.set(false);
+        spinner.join();
         return new JSONObject(responseString);
     }
 

@@ -1,19 +1,19 @@
 import com.github.javaparser.*;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.comments.Comment;
-import org.apache.commons.io.FileUtils;
 import constants.Headers;
 
-
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 
 /**
  * This class handles file related processes
  */
 public class FileProcessor {
+
+    public static Map<String, String> mutationOperators = new HashMap<>();
 
     /**
      * This method iterates through list of files to mutate and store them in the output directory
@@ -21,13 +21,28 @@ public class FileProcessor {
      */
     public static void processFiles(List<File> files){
         try {
-            File outputDir = new File(Paths.get(files.getFirst().getAbsolutePath()).getParent().getParent().toString(), "output");
+            Path rootDir = Paths.get(files.getFirst().getAbsolutePath()).getParent().getParent();
+            File outputDir = new File(rootDir.toFile(), "output");
             if (outputDir.exists()) {
-                FileUtils.deleteDirectory(outputDir);  // Deletes existing output directory and all its contents
+                Files.walkFileTree(outputDir.toPath(), new SimpleFileVisitor<>(){
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        Files.delete(file);  // delete file
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        Files.delete(dir);  // delete empty dir after contents
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
                 Logger.log("Output directory cleared...");
             }
+
             if (outputDir.mkdirs()) {
                 Logger.log("Output directory created at " + outputDir.getPath());
+                int fileCount = files.size();
+                Logger.log(fileCount + " File(s) to mutate...");
 
                 for (File file : files) {
                     String javaHeader = checkForHeader(file);
@@ -49,18 +64,29 @@ public class FileProcessor {
                         // Extract Java and Save to File.
                         String extractedJavaCode = extractJavaCodeFromResponse(mutatedCode);
                         if (!extractedJavaCode.isEmpty()) {
+                            Path relativePath = rootDir.relativize(file.toPath());
+                            Path outputFilePath = outputDir.toPath().resolve(relativePath);
 
-                            saveToFile(javaHeader + extractedJavaCode, outputDir.getPath() + "/" + file.getName());
+                            // Create parent dirs if it doesn't exist
+                            Files.createDirectories(outputFilePath.getParent());
+                            saveToFile(javaHeader + extractedJavaCode, outputFilePath.toString());
+
+                            mutationOperators.put(file.getName(),getAppliedMutators(extractedJavaCode));
                         } else {
                             Logger.error("Java code block not found in response. LLM Mutation for " + file.getName() + " failed...");
                         }
                     } else {
                         Logger.error("No Mutation response returned for " + file.getName());
                     }
+                    fileCount -= 1;
+                    Logger.log(fileCount + " file(s) remaining...");
+                }
+                if(!mutationOperators.isEmpty()){ //Saves all the used mutators in Excel format.
+                    reportMutators(outputDir + "/MutationOperators.csv");
                 }
             }
         } catch (IOException e) {
-            Logger.log(e.getMessage());
+            Logger.error(e.getMessage());
         }
     }
 
@@ -129,5 +155,45 @@ public class FileProcessor {
         }
 
         return "";
+    }
+
+    /**
+     * Extracts all mutation operators used to mutate the java file.
+     * @param mutatedJavaCode mutated code with comments of operators used.
+     * @return list of comments (operators)
+     */
+    public static String getAppliedMutators(String mutatedJavaCode){
+        StringBuilder operations = new StringBuilder();
+        try {
+            CompilationUnit cu = StaticJavaParser.parse(mutatedJavaCode);
+            List<Comment> comments = cu.getAllComments();
+            for(Comment comment : comments){
+                operations.append(comment.getContent().trim()).append("\n");
+            }
+        } catch (Exception e) {
+            Logger.log(e.getMessage());
+        }
+        return operations.toString();
+    }
+
+    /**
+     * Saves list of mutators used for each java mutated file in an Excel format
+     * @param excelFilePath : Path for Excel report file.
+     */
+    public static void reportMutators(String excelFilePath) {
+        Logger.log("Writing Mutation comments to Excel file: " + excelFilePath);
+
+        try (FileWriter writer = new FileWriter(excelFilePath)) {
+            writer.append("Java File Name,Mutation Comments\n");
+
+            for (Map.Entry<String, String> entry : mutationOperators.entrySet()) {
+                String sanitizedComment = entry.getValue().replace("\"", "\"\"");
+                writer.append(entry.getKey()).append(",\"").append(sanitizedComment).append("\"\n");
+            }
+            Logger.log("CSV file created successfully!");
+        } catch (IOException e) {
+            Logger.log(e.getMessage());
+        }
+
     }
 }

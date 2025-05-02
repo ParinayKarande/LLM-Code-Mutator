@@ -1,7 +1,10 @@
 import java.io.File;
+import java.nio.file.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
+import java.io.IOException;
 
 /**
  * Initial Processor method to parse arguments
@@ -32,11 +35,12 @@ public class InitProcessor {
             else if (dirPath != null){
                 File dir = new File(dirPath);
                 if (dir.exists() && dir.isDirectory()) {
-                    File[] dirFiles = dir.listFiles((dir1, name) -> name.endsWith(".java"));
-                    if (dirFiles != null) {
-                        Collections.addAll(files, dirFiles);
-                    } else {
-                        Logger.error("No Java files found in the directory.");
+                    try (Stream<Path> paths = Files.walk(dir.toPath())) {
+                        paths.filter(Files::isRegularFile)
+                                .filter(path -> path.toString().endsWith(".java"))
+                                .forEach(path -> files.add(path.toFile()));
+                    } catch (IOException e) {
+                        Logger.error("Error walking through directory: " + e.getMessage());
                     }
                 } else {
                     Logger.error("Invalid directory path.");
