@@ -1,26 +1,33 @@
+import Interfaces.LLMApiService;
+import Interfaces.LoggerService;
+
 import java.io.*;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        try{
-            Logger.log("Starting LLM Mutation ...");
+        LoggerService logger = new Logger();
+        InitProcessor initProcessor = new InitProcessor(args, logger);
 
-            //process args
-            List<File> files = InitProcessor.processArguments(args);
+        try{
+            logger.log("Starting LLM Mutator ...");
+
+            List<File> files = initProcessor.getJavaFiles();
+            LLMApiService apiService = initProcessor.createAPIService();
 
             //process file(s)
-            if(!files.isEmpty()){
-                FileProcessor.processFiles(files);
+            if (files.isEmpty()) {
+                logger.error("No file(s) found in the specified directory...");
+            } else if (apiService == null) {
+                logger.error("Unsupported LLM model. Terminating process...");
+            } else {
+                FileProcessor fileProcessor = new FileProcessor(logger, apiService);
+                fileProcessor.processJavaFiles(files,initProcessor.getOutputPath());
+                logger.log("LLM Mutation Completed");
             }
-            else {
-                Logger.error("No file(s) found in the specified directory...");
-            }
-
-            Logger.log("LLM Mutation Completed");
 
         } catch (Exception e) {
-            Logger.error(e.getMessage());;
+            logger.error(e.getMessage());
         }
     }
 }

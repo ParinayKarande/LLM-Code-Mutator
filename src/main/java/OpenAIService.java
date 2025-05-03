@@ -1,3 +1,5 @@
+import Interfaces.LLMApiService;
+import Interfaces.LoggerService;
 import enums.Mutators;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -8,17 +10,26 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class OpenAIService {
+public class OpenAIService implements LLMApiService {
 
-    private static final String API_KEY = System.getenv("OPENAI_API_KEY");
-    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String MODEL_NAME = "gpt-4o-mini";
-    public static double TOTAL_COST = 0.0;
+    private final String API_KEY;
+    private final String MODEL_NAME;
+    private double TOTAL_COST;
+    private final String API_URL;
+    private final LoggerService logger;
 
+    public OpenAIService(String modelName, String apiKey, String apiUrl, LoggerService logger) {
+        this.MODEL_NAME = modelName;
+        this.TOTAL_COST = 0.0;
+        this.logger = logger;
+        this.API_KEY = apiKey;
+        this.API_URL = apiUrl;
+    }
 
-    public static String askOpenAI(String javaCode) {
+    @Override
+    public String askOpenAI(String javaCode) {
         try {
-            Logger.log("LLM Mutation started...");
+            logger.log("LLM Mutation started...");
 
             //generate prompt
             String prompt = generatePrompt(javaCode);
@@ -32,8 +43,8 @@ public class OpenAIService {
         }
     }
 
-    private static String generatePrompt(String javaCode) {
-        Logger.log("Generating Prompt...");
+    private String generatePrompt(String javaCode) {
+        logger.log("Generating Prompt...");
 
         StringBuilder mutators = new StringBuilder();
         for (Mutators mutator : Mutators.values()) {
@@ -48,11 +59,12 @@ public class OpenAIService {
 
     }
 
-    private static JSONObject sendAPIRequest(String prompt) throws Exception {
+    private JSONObject sendAPIRequest(String prompt) throws Exception {
+
         HttpClient client = HttpClients.createDefault();
         HttpPost request = new HttpPost(API_URL);
 
-        Logger.log("Sending API request to " + MODEL_NAME + "...");
+        logger.log("Sending API request to " + MODEL_NAME + "...");
 
         request.setHeader("Authorization", "Bearer " + API_KEY);
         request.setHeader("Content-Type", "application/json");
@@ -88,7 +100,7 @@ public class OpenAIService {
         return new JSONObject(responseString);
     }
 
-    private static String processResponse(JSONObject responseJson) {
+    private String processResponse(JSONObject responseJson) {
         StringBuilder responseBuilder = new StringBuilder();
         String responseText = "";
 
@@ -98,10 +110,10 @@ public class OpenAIService {
 
         if(responseText.isEmpty()){
             responseText = "No response from the model.";
-            Logger.error(responseText);
+            logger.error(responseText);
         }
         else {
-            Logger.log("API response received...");
+            logger.log("API response received...");
 
             if (responseJson.has("usage")) {
                 int promptTokens = responseJson.getJSONObject("usage").getInt("prompt_tokens");
@@ -120,8 +132,8 @@ public class OpenAIService {
                 responseBuilder.append("Completion Tokens: ").append(completionTokens).append("\n");
                 responseBuilder.append("Total Tokens: ").append(totalTokens).append("\n");
                 responseBuilder.append(String.format("Estimated Cost: $%.6f", totalCost)).append("\n");
-                Logger.log(responseBuilder.toString());
-                Logger.log(String.format("Combined Overall Token Cost: $%.6f", TOTAL_COST));
+                logger.log(responseBuilder.toString());
+                logger.log(String.format("Combined Overall Token Cost: $%.6f", TOTAL_COST));
             }
         }
 
