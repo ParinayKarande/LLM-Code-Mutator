@@ -17,13 +17,15 @@ public class OpenAIService implements LLMApiService {
     private double TOTAL_COST;
     private final String API_URL;
     private final LoggerService logger;
+    private final HttpClient client;
 
-    public OpenAIService(String modelName, String apiKey, String apiUrl, LoggerService logger) {
+    public OpenAIService(String modelName, String apiKey, String apiUrl, HttpClient httpClient, LoggerService logger) {
         this.MODEL_NAME = modelName;
         this.TOTAL_COST = 0.0;
         this.logger = logger;
         this.API_KEY = apiKey;
         this.API_URL = apiUrl;
+        this.client = httpClient;
     }
 
     @Override
@@ -60,8 +62,6 @@ public class OpenAIService implements LLMApiService {
     }
 
     private JSONObject sendAPIRequest(String prompt) throws Exception {
-
-        HttpClient client = HttpClients.createDefault();
         HttpPost request = new HttpPost(API_URL);
 
         logger.log("Sending API request to " + MODEL_NAME + "...");

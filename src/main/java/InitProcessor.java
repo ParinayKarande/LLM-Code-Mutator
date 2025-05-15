@@ -1,9 +1,9 @@
 import Interfaces.*;
 import Interfaces.LoggerService;
+import org.apache.http.impl.client.HttpClients;
 
 import java.io.File;
 import java.nio.file.*;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -50,7 +50,7 @@ public class InitProcessor implements ArgumentParser {
             if (filePath != null) {
                 // Return a single file
                 File file = new File(filePath);
-                if (file.exists() && file.isFile()) {
+                if (file.exists() && file.isFile() && file.getName().endsWith(".java")) {
                     files.add(file);
                     setOutputPath(Paths.get(file.getParent()));
                 } else {
@@ -87,6 +87,7 @@ public class InitProcessor implements ArgumentParser {
      * reads which LLM Model to be used
      * @return model type
      */
+    @Override
     public String getModel() {
         String model = "gpt4omini";//default model
         for (int i = 0; i < args.length; i++) {
@@ -97,6 +98,7 @@ public class InitProcessor implements ArgumentParser {
         return model;
     }
 
+    @Override
     public LLMApiService createAPIService() {
         LLMApiService apiService = null;
         String model = getModel().trim().toLowerCase();
@@ -108,6 +110,7 @@ public class InitProcessor implements ArgumentParser {
                 apiService = new OpenAIService("gpt-4o-mini"
                         , apiKey
                         , "https://api.openai.com/v1/chat/completions"
+                        , HttpClients.createDefault()
                         , logger);
             } else {
                 logger.error("API Key not found in Environment Variables");
@@ -120,7 +123,7 @@ public class InitProcessor implements ArgumentParser {
         return this.outputPath;
     }
 
-    public void setOutputPath(Path outputPath){
+    private void setOutputPath(Path outputPath){
         this.outputPath = outputPath;
     }
 

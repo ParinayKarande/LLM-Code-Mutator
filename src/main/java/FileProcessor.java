@@ -59,6 +59,7 @@ public class FileProcessor implements MutationProcessor {
      * @param file : file to be mutated
      * @return Java code without comments
      */
+    @Override
     public String readJavaCodeWithoutComments(File file) {
         logger.log("Extracting Java Code from file...");
         CompilationUnit cu = new CompilationUnit();
@@ -76,7 +77,12 @@ public class FileProcessor implements MutationProcessor {
         return cu.toString();
     }
 
-    public String extractJavaCodeFromResponse(String response) {
+    /**
+     * extractJavaCodeFromResponse
+     * @param response
+     * @return
+     */
+    private String extractJavaCodeFromResponse(String response) {
         String startTag = "```java";
         String endTag = "```";
 
@@ -89,7 +95,12 @@ public class FileProcessor implements MutationProcessor {
         return "";
     }
 
-    public void saveToFile(String code, String filePath) {
+    /**
+     * saveToFile
+     * @param code
+     * @param filePath
+     */
+    private void saveToFile(String code, String filePath) {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write(code);
@@ -99,12 +110,12 @@ public class FileProcessor implements MutationProcessor {
         }
     }
 
-
     /**
      * Checks for java licence headers
      * @param file : file under check
      * @return header if found in list of constant headers
      */
+    @Override
     public String checkForHeader(File file) {
         try {
             String content = Files.readString(file.toPath());
@@ -126,6 +137,7 @@ public class FileProcessor implements MutationProcessor {
      * @param mutatedJavaCode mutated code with comments of operators used.
      * @return list of comments (operators)
      */
+    @Override
     public String getAppliedMutators(String mutatedJavaCode){
         StringBuilder operations = new StringBuilder();
         try {
@@ -144,7 +156,7 @@ public class FileProcessor implements MutationProcessor {
      * Saves list of mutators used for each java mutated file in an Excel format
      * @param excelFilePath : Path for Excel report file.
      */
-    public void reportMutators(String excelFilePath) {
+    private void reportMutators(String excelFilePath) {
         logger.log("Writing Mutation comments to Excel file: " + excelFilePath);
 
         try (FileWriter writer = new FileWriter(excelFilePath)) {
@@ -161,7 +173,13 @@ public class FileProcessor implements MutationProcessor {
 
     }
 
-    public boolean prepareOutputDirectory(Path rootDir) throws IOException {
+    /**
+     * prepareOutputDirectory
+     * @param rootDir
+     * @return
+     * @throws IOException
+     */
+    private boolean prepareOutputDirectory(Path rootDir) throws IOException {
         outputDir = new File(rootDir.toFile(), "output");
         if (outputDir.exists()) {
             Files.walkFileTree(outputDir.toPath(), new SimpleFileVisitor<>(){
@@ -186,7 +204,7 @@ public class FileProcessor implements MutationProcessor {
      * @param file
      * @throws IOException
      */
-    public void processFile(File file) throws IOException {
+    private void processFile(File file) throws IOException {
         String javaHeader = checkForHeader(file);
         String javaCode = readJavaCodeWithoutComments(file);
 
