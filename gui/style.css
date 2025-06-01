@@ -1,0 +1,117 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #2c3e50;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #3b5998;
+}
+
+#container {
+    display: flex;
+    flex-direction: column;
+    max-width: 700px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+input[type="text"] {
+    width: 83%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #e9ecef;
+    color: #333;
+}
+
+button {
+    padding: 10px 15px;
+    margin-left: 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    background-color: #3b5998;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2e4a84;
+}
+
+textarea {
+    width: 100%;
+    height: 300px;
+    margin-top: 20px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+}
+
+#statusBar {
+    margin-top: 20px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+#descriptionBar {
+    padding: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+#descriptionBar p {
+    margin: 4px 0;
+}
+
+#stopBtn {
+    color: white;
+    font-weight: bold;
+}
+
+#destinationBar {
+    padding: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+#destPathMessage {
+    display: none;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+
+#runControls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+#costBar {
+    margin-top: 20px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+#fileBar {
+    margin-top: 20px;
+    font-family: monospace;
+    font-size: 14px;
+}
