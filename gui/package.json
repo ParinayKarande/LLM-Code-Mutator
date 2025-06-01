@@ -1,0 +1,67 @@
+{
+  "name": "llmmutator",
+  "version": "2.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "build:all": "electron-builder --mac --win --linux"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^36.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.parinay.llmmutator",
+    "productName": "LLM_Mutator",
+    "directories": {
+      "output": "../gui/dist"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "style.css",
+      "!node_modules/.cache",
+      "!dist"
+    ],
+    "extraResources": [
+      {
+        "from": "./jre",
+        "to": "jre"
+      },
+      {
+        "from": "../target/LLMMutator-1.0-SNAPSHOT-jar-with-dependencies.jar",
+        "to": "llm-mutator.jar"
+      }
+    ],
+    "asar": true,
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "shell-env": "^4.0.1",
+    "xterm": "^5.3.0"
+  }
+}

@@ -36,3 +36,8 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### VS Code ###
+.idea/
+
+gui/node_modules/

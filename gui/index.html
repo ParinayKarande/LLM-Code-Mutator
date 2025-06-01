@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LLM Mutator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="container">
+        <h1>LLM Mutator GUI Tool</h1>
+        <div id="descriptionBar">
+            <p>This tool mutates Java source files using OpenAI’s GPT-4o-mini and a set of predefined mutation
+                operators.</p>
+            <p>To begin, select a single <code>.java</code> file or a directory to mutate all <code>.java</code> files
+                within it.</p>
+            <p>Before running, ensure your OpenAI API key is stored as an environment variable. <a
+                    href="https://github.com/ParinayKarande/LLM-Code-Mutator?tab=readme-ov-file#-storing-the-openai-api-key">Follow
+                    these steps</a>.</p>
+            <p>When you're ready, click <strong>Run</strong> to begin execution.</p>
+        </div>
+        <div>
+            <input id="cmdInput" type="text" readonly>
+            <button id="browseBtn">Browse</button>
+        </div>
+        <div id="destinationBar">
+            <p id="destPathMessage">
+                Destination:
+                <span id="destPath"
+                    style="text-decoration: underline; color: blue; cursor: pointer;">[path]/output</span>
+            </p>
+        </div>
+        <div id="fileBar"></div>
+        <div id="costBar"></div>
+        <div id="statusBar">Click browse to begin.</div>
+        <div id="runControls">
+            <button id="runBtn">Run</button>
+            <button id="stopBtn" style="display: none; background-color: #e74c3c;">Stop</button>
+        </div>
+        <div id="version" style="position: fixed; bottom: 30px; right: 40px; font-size: small; color: #666;">
+            Version: <span id="versionNumber">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const { shell } = require('electron');
+        const cmdInput = document.getElementById('cmdInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const runBtn = document.getElementById('runBtn');
+        const statusBar = document.getElementById('statusBar');
+
+        const stopBtn = document.getElementById('stopBtn');
+        const destPath = document.getElementById('destPath');
+        const pathModule = require('path');
+        loadVersion();
+
+        browseBtn.addEventListener('click', () => {
+            ipcRenderer.send('open-dialog');
+        });
+
+        ipcRenderer.on('command-output', (event, data) => {
+            costBar.style.display = 'inline-block';
+            const cleaned = data.replace(/^\[INFO\] ?: ?/, '').trim();
+            if (cleaned.includes('Estimated Cost') || cleaned.includes('Combined Overall Token Cost')) {
+                costBar.textContent = cleaned;
+            } else if (cleaned.includes('file(s) remaining') || cleaned.includes('File(s) to mutate')) {
+                fileBar.textContent = cleaned;
+            } else if (cleaned.includes('Starting LLM Mutator') || cleaned.includes('LLM Mutation Completed')) {
+                statusBar.textContent = cleaned;
+            }
+
+            if (/^\r[|\/\\-]/.test(data)) {
+                statusBar.textContent = 'LLM Mutator running ' + data; return;
+            }
+            updateHeight();
+        });
+
+        let currentProcessId = null;
+
+        ipcRenderer.on('selected-path', (event, selectedPath) => {
+            if (selectedPath) {
+                cmdInput.value = selectedPath;
+                const parentDir = pathModule.dirname(selectedPath);
+                const outputPath = pathModule.join(parentDir, 'output');
+
+                destPath.textContent = outputPath;
+                destPathMessage.style.display = 'block';
+                statusBar.textContent = 'Ready.';
+                costBar.textContent = '';
+                fileBar.textContent = '';
+                updateHeight();
+            }
+        });
+
+        runBtn.addEventListener('click', () => {
+            if (cmdInput.value != '') {
+                ipcRenderer.send('run-command', cmdInput.value);
+                stopBtn.style.display = 'inline-block';
+                runBtn.style.display = 'none'
+                costBar.textContent = 'Combined Overall Token Cost: $0.0';
+                costBar.style.display = 'none';
+                updateHeight();
+            }
+            else {
+                statusBar.textContent = 'select a .java file or a directory.';
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            const confirmed = confirm('Are you sure you want to end the process?\nAny tokens already used cannot be recovered.');
+            if (confirmed) {
+                ipcRenderer.send('stop-process');
+                stopBtn.style.display = 'none';
+                runBtn.style.display = 'inline-block';
+                statusBar.textContent = 'LLM Mutator Stopped.';
+            }
+        });
+
+        ipcRenderer.on('process-complete', () => {
+            stopBtn.style.display = 'none';
+            runBtn.style.display = 'inline-block';
+        });
+
+        document.addEventListener('click', function (event) {
+            const target = event.target.closest('a');
+
+
+            if (target && (target.href.startsWith('http'))) {
+                event.preventDefault();
+                shell.openExternal(target.href);
+            }
+        });
+
+        document.getElementById('destPath').addEventListener('click', () => {
+            const path = document.getElementById('destPath').textContent;
+            ipcRenderer.send('open-destination', path);
+        });
+
+        function updateHeight() {
+            const height = document.body.scrollHeight;
+            ipcRenderer.send('resize-window', height + 30);
+        }
+
+        async function loadVersion() {
+            const version = await ipcRenderer.invoke('get-app-version');
+            document.getElementById('versionNumber').textContent = version;
+        }
+    </script>
+</body>
+
+</html>
